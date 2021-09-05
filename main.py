@@ -1,30 +1,36 @@
-import json
+import pandas as pd 
+from tqdm import tqdm
 import os
-from PIL import Image
+from PIL import Image, ImageColor
 from ast import literal_eval as make_tuple
+COLOR_FROM = '#000000'
 
 def main():
-    with open('config.json') as f:
-        config = json.load(f)
-        print(config)
+    # Load colours 
+    colours = pd.read_csv('colours.csv')
+    print('Processing the following colours ...')
+    print(colours)
     
+    # Set directory paths 
     dir = r'./pics'
     out = r'./out'
+
     for filename in os.listdir(dir):
-        im = Image.open(os.path.join(dir, filename))
+        print('Processing {} with the above colours, please wait ...'.format(filename))
+        filenameSplit = filename.split('.')
 
-        # Get the size of the image
-        width, height = im.size
-
-        for colour_to in config['colour_to']:
+        for _, r in tqdm(colours.iterrows(), total = len(colours.index)):
+            # Get the size of the image
+            im = Image.open(os.path.join(dir, filename))
+            width, height = im.size
             # Process every pixel
             for x in range(width):
                 for y in range(height):
                     current_pixel_colour = im.getpixel((x, y))
-                    if current_pixel_colour == make_tuple(config['colour_from']):
-                        im.putpixel((x, y), make_tuple(colour_to))
+                    if current_pixel_colour == ImageColor.getcolor(COLOR_FROM, "RGB"):
+                        im.putpixel((x, y), ImageColor.getcolor(r['Hex'], "RGB"))
 
-            im.save(os.path.join(out, ' '.join([colour_to, filename])))
+            im.save(os.path.join(out, ' '.join([filenameSplit[0], 'in', r['Name']]) + '.' + filenameSplit[1]))
 
 if __name__ == "__main__":
     main()
